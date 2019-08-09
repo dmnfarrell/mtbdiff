@@ -28,6 +28,10 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from Bio import AlignIO, SeqIO
 
+module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
+datadir = os.path.join(module_path, 'data')
+RD = pd.read_csv('RD.csv',comment='#')
+
 def features_to_dataframe(features, cds=False):
     """Get features from a biopython seq record object into a dataframe
     Args:
@@ -60,20 +64,25 @@ def gff_to_dataframe(filename):
     feats = utils.gff_to_features(filename)
     return features_to_dataframe(feats)
 
-def run_nucdiff(ref,query):
-    r = os.path.splitext(ref)[0]
-    q = os.path.splitext(query)[0]
-    out = f'{r}_{q}'
+def run_nucdiff(ref, query, outpath='results'):
+    """Run nucfdiff"""
+
+    r = os.path.splitext(os.path.basename(ref))[0]
+    q = os.path.splitext(os.path.basename(query))[0]
+    out = outpath + f'/{r}_{q}'
     if not os.path.exists(out):
-        cmd = f'nucdiff genomes/{ref} genomes/{query} {r}_{q} query'
+        cmd = f'nucdiff {ref} {query} {out} query'
         print (cmd)
         subprocess.check_output(cmd,shell=True)
+    else:
+        print ('folder already present')
+    return
 
 def find_regions(result):
-    """find known regions overlap in results from nucdiff"""
+    """Find known regions overlap in results from nucdiff"""
 
     #result = result[result.Name.isin(['insertion','deletion'])]
-    RD = pd.read_csv('RD.csv',comment='#')
+
     regions = ['RD'+str(i) for i in range(1,15)]
     RD = RD[RD.RD_name.isin(regions)]
     found=[]

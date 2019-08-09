@@ -19,7 +19,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import os, sys, io, random, subprocess
+import os, sys, io, random, subprocess, glob
 import string
 import numpy as np
 import pandas as pd
@@ -29,4 +29,17 @@ from Bio.Align import MultipleSeqAlignment
 from Bio import AlignIO, SeqIO
 from . import utils
 
+module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
+datadir = os.path.join(module_path, 'data')
+mtbref = os.path.join(datadir, 'MTB-H37Rv.fna')
 
+def run_genomes(path):
+    """Run multiple genome files in path"""
+
+    filenames = glob.glob(path+'/*.f*a')
+    for f in filenames:
+        n = os.path.basename(f)
+        print (f, n)
+        utils.run_nucdiff(mtbref,f)
+
+    return

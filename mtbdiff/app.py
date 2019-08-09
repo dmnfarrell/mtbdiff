@@ -21,7 +21,14 @@
 
 import os,sys,subprocess
 import pandas as pd
-from . import utils
+from . import utils, analysis
+
+def run_tests():
+    """test run"""
+
+    path = 'test'
+    analysis.run_genomes(path)
+    return
 
 def main():
     "Run the application"
@@ -32,7 +39,8 @@ def main():
     parser.add_option("-t", "--test", dest="test",  action="store_true",
                         default=False, help="Do tests")
     opts, remainder = parser.parse_args()
-
+    if opts.test == True:
+        run_tests()
 
 if __name__ == '__main__':
     main()
