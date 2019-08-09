@@ -1,0 +1,23 @@
+name: mtbdiff
+version: 'latest'
+#version-script: git describe --abbrev=1 --tags
+summary: 
+description: |
+ command line tool to perform comparative analysis of genome sequences of MTB species.
+
+grade: stable
+confinement: strict
+icon: gui/icon.png
+
+apps:
+  mtbdiff:
+    command: bin/mtbdiff
+    plugs: [home,network-bind]
+
+parts:
+  mtbdiff:
+    plugin: python
+    python-version: python3
+    source: ../
+    stage-packages:
+      [mummer]

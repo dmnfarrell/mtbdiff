@@ -1,0 +1,29 @@
+Background
+----------
+
+This is a command line tool to perform comparative analysis of genome sequences of MTB species.
+It uses NucDiff and MUMmer to find structural changes of the query species compared to MTB H37Rv.
+
+Documentation is at https://github.com/dmnfarrell/mtbdiff/wiki
+
+Dependencies
+------------
+
+numpy
+pandas
+matplotlib
+biopython
+pyfaidx
+mummer
+nucdiff
+
+Installation
+------------
+
+pip install mtbdiff
+
+Links
+-----
+
+* https://github.com/dmnfarrell/mtbdiff
+* https://github.com/uio-cels/NucDiff
