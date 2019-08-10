@@ -30,7 +30,7 @@ from Bio import AlignIO, SeqIO
 
 module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
 datadir = os.path.join(module_path, 'data')
-RD = pd.read_csv('RD.csv',comment='#')
+RD_file = os.path.join(datadir,'RD.csv')
 
 def features_to_dataframe(features, cds=False):
     """Get features from a biopython seq record object into a dataframe
@@ -60,8 +60,20 @@ def features_to_dataframe(features, cds=False):
     df = pd.DataFrame(allfeat,columns=cols)
     return df
 
+def gff_to_features(gff_file):
+    """Get features from gff file"""
+
+    if not os.path.exists(gff_file):
+        return
+    from BCBio import GFF
+    in_handle = open(gff_file,'r')
+    rec = list(GFF.parse(in_handle))[0]
+    in_handle.close()
+    return rec.features
+
 def gff_to_dataframe(filename):
-    feats = utils.gff_to_features(filename)
+
+    feats = gff_to_features(filename)
     return features_to_dataframe(feats)
 
 def run_nucdiff(ref, query, outpath='results'):
@@ -78,17 +90,46 @@ def run_nucdiff(ref, query, outpath='results'):
         print ('folder already present')
     return
 
+def read_nucdiff_gff(gff_file):
+    """Read nucdiff results gff"""
+
+    def get_descr(x):
+        return x.Name+'_'+str(x.start)+':'+str(x.end)
+
+    df = gff_to_dataframe(gff_file)
+    df['descr'] = df.apply(get_descr,1)
+    return df
+
+def get_nucdiff_results(path, names):
+    """Get results from multiple nucdiff folders."""
+
+    struct = []
+    snp = []
+    ref = 'MTB-H37Rv'
+    for n in names:
+        df = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_struct.gff')
+        df2 = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_snps.gff')
+        df['species'] = n
+        df2['species'] = n
+        struct.append(df)
+        snp.append(df2)
+    struct = pd.concat(struct, sort=True)
+    snp = pd.concat(snp, sort=True)
+    return struct, snp
+
 def find_regions(result):
-    """Find known regions overlap in results from nucdiff"""
+    """find known regions overlap in results from nucdiff"""
 
     #result = result[result.Name.isin(['insertion','deletion'])]
-
+    RD = pd.read_csv(RD_file,comment='#')
     regions = ['RD'+str(i) for i in range(1,15)]
     RD = RD[RD.RD_name.isin(regions)]
     found=[]
     for i,r in list(result.iterrows()):
-        df = RD[ (abs(RD.Start-r.start)<800) | (abs(RD.Stop-r.end)<800)].copy()
-        #df = RD[(RD.Start>=r.start) & (RD.Stop<=r.end) ]
+        #df = RD[ (abs(RD.Start-r.start)<800) | (abs(RD.Stop-r.end)<800)].copy()
+        df = RD[((r.start>RD.Start) & (r.start<RD.Stop)) |
+                  ((r.end>RD.Start) & (r.end<RD.Stop)) |
+                  ((r.start<RD.Start) & (r.end>RD.Stop))].copy()
         if len(df)>0:
             idcol = r.keys()[0]
             df['name'] = r[idcol]
@@ -97,3 +138,37 @@ def find_regions(result):
             found.append(df)
     found = pd.concat(found)
     return found
+
+def get_assembly_summary(id):
+    from Bio import Entrez
+    esummary_handle = Entrez.esummary(db="assembly", id=id, report="full")
+    esummary_record = Entrez.read(esummary_handle)
+    return esummary_record
+
+def get_assemblies(term, download=True, path='assemblies'):
+    """Download genbank assemblies for a given search term.
+    Args:
+        term: usually organaism name"""
+
+    from Bio import Entrez
+    Entrez.email = "A.N.Other@example.com"
+    handle = Entrez.esearch(db="assembly", term=term, retmax='200')
+    record = Entrez.read(handle)
+    ids = record['IdList']
+    print (f'found {len(ids)} ids')
+    links = []
+    for id in ids:
+        #get summary
+        summary = get_assembly_summary(id)
+        #get ftp link
+        url = summary['DocumentSummarySet']['DocumentSummary'][0]['FtpPath_RefSeq']
+        if url == '':
+            continue
+        label = os.path.basename(url)
+        link = os.path.join(url,label+'_genomic.fna.gz')
+        print (link)
+        links.append(link)
+        if download == True:
+            #download link
+            urllib.request.urlretrieve(link, f'{label}.fna.gz')
+    return links

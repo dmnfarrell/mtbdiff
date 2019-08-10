@@ -31,15 +31,26 @@ from . import utils
 
 module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
 datadir = os.path.join(module_path, 'data')
-mtbref = os.path.join(datadir, 'MTB-H37Rv.fna')
+mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
+mtb_gff = os.path.join(datadir, 'MTB-H37Rv.gff')
 
-def run_genomes(path):
+def run_genomes(path, outpath='results'):
     """Run multiple genome files in path"""
 
     filenames = glob.glob(path+'/*.f*a')
+    names = []
     for f in filenames:
-        n = os.path.basename(f)
+        n = os.path.splitext(os.path.basename(f))[0]
+        names.append(n)
         print (f, n)
-        utils.run_nucdiff(mtbref,f)
+        utils.run_nucdiff(mtb_ref,f, outpath)
+    return names
 
-    return
+def run_RD_checker(rds):
+
+    X = pd.pivot_table(rds,index='RD_name',columns=['species'],values='Start')
+    #f,ax=plt.subplots(figsize=(8,8))
+    X[X.notnull()] = 1
+    X = X.fillna(0)
+    print (X)
+    #cl = sns.clustermap(X,cbar=False,figsize=(7,8),lw=.2,linecolor='gray',cmap='gray_r',yticklabels=True)

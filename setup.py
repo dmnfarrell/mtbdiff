@@ -20,6 +20,7 @@ setup(
     install_requires=['numpy>=1.10',
                       'pandas>=0.24',
                       'biopython>=1.5',
+                      'bcbio_gff',
                       'nucdiff',
                       'pyfaidx',
                       'future'],

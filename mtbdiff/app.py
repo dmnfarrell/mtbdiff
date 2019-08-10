@@ -20,6 +20,7 @@
 """
 
 import os,sys,subprocess
+import numpy as np
 import pandas as pd
 from . import utils, analysis
 
@@ -27,7 +28,14 @@ def run_tests():
     """test run"""
 
     path = 'test'
-    analysis.run_genomes(path)
+    names = analysis.run_genomes(path)
+    struct, snp = utils.get_nucdiff_results('results', names)
+    struct.to_csv('results/ref_struct.csv')
+    print()
+    print ('structural differences')
+    print (struct.groupby('species').agg({'start':np.size}))
+    rds = utils.find_regions(struct)
+    analysis.run_RD_checker(rds)
     return
 
 def main():
