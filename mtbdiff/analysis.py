@@ -23,6 +23,7 @@ import os, sys, io, random, subprocess, glob
 import string
 import numpy as np
 import pandas as pd
+import seaborn as sns
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
@@ -47,10 +48,14 @@ def run_genomes(path, outpath='results'):
     return names
 
 def run_RD_checker(rds):
+    """Check for presence of RD"""
 
     X = pd.pivot_table(rds,index='RD_name',columns=['species'],values='Start')
     #f,ax=plt.subplots(figsize=(8,8))
     X[X.notnull()] = 1
     X = X.fillna(0)
-    print (X)
-    #cl = sns.clustermap(X,cbar=False,figsize=(7,8),lw=.2,linecolor='gray',cmap='gray_r',yticklabels=True)
+    return X
+
+def plot_RD(df, path):
+    cl=sns.clustermap(df,cbar=False,figsize=(7,8),lw=.2,linecolor='gray',cmap='gray_r',yticklabels=True)
+    cl.savefig(os.path.join(path,'RD.png'))

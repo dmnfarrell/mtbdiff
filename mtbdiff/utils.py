@@ -98,6 +98,9 @@ def read_nucdiff_gff(gff_file):
 
     df = gff_to_dataframe(gff_file)
     df['descr'] = df.apply(get_descr,1)
+    df['length'] = df.end - df.start
+    #remove zero location
+    df = df[df.start>0]
     return df
 
 def get_nucdiff_results(path, names):

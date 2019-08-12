@@ -27,15 +27,17 @@ from . import utils, analysis
 def run_tests():
     """test run"""
 
-    path = 'test'
-    names = analysis.run_genomes(path)
-    struct, snp = utils.get_nucdiff_results('results', names)
-    struct.to_csv('results/ref_struct.csv')
+    path = 'test_genomes'
+    names = analysis.run_genomes(path, outpath='test_results')
+    struct, snp = utils.get_nucdiff_results('test_results', names)
+    struct.to_csv('test_results/ref_struct.csv')
     print()
     print ('structural differences')
     print (struct.groupby('species').agg({'start':np.size}))
     rds = utils.find_regions(struct)
-    analysis.run_RD_checker(rds)
+    print ('regions of difference')
+    x=analysis.run_RD_checker(rds)
+    analysis.plot_RD(x,'test_results')
     return
 
 def main():
