@@ -31,6 +31,7 @@ from Bio import AlignIO, SeqIO
 module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
 datadir = os.path.join(module_path, 'data')
 RD_file = os.path.join(datadir,'RD.csv')
+RD = pd.read_csv(RD_file,comment='#')
 
 def features_to_dataframe(features, cds=False):
     """Get features from a biopython seq record object into a dataframe
@@ -58,6 +59,8 @@ def features_to_dataframe(features, cds=False):
         allfeat.append(d)
     cols = list(qual.keys())+['start','end']
     df = pd.DataFrame(allfeat,columns=cols)
+    if 'gene' in df.columns:
+        df['gene'] = df.gene.fillna(df.locus_tag)
     return df
 
 def gff_to_features(gff_file):
@@ -112,8 +115,8 @@ def get_nucdiff_results(path, names):
     for n in names:
         df = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_struct.gff')
         df2 = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_snps.gff')
-        df['species'] = n
-        df2['species'] = n
+        df['label'] = n
+        df2['label'] = n
         struct.append(df)
         snp.append(df2)
     struct = pd.concat(struct, sort=True)
@@ -136,13 +139,49 @@ def find_regions(result):
         if len(df)>0:
             idcol = r.keys()[0]
             df['name'] = r[idcol]
-            df['species'] = r.species
+            df['label'] = r.label
             df['start'] = r.start
             found.append(df)
     found = pd.concat(found)
     return found
 
+def get_region(x, stcoord='start', endcoord='end'):
+    """Get an overlapping RD from coord"""
+    
+    st = x[stcoord]; end = x[endcoord]
+    found = RD[ (st>RD.Start) & (st<RD.Stop) |
+                 ((end>RD.Start) & (end<RD.Stop)) |
+                 ((st<RD.Start) & (end>RD.Stop))]
+    if len(found)>0:
+        return found.iloc[0].RD_name
+
+def get_mtb_gff():
+    gff_file = analysis.mtb_gff
+    feat = utils.gff_to_dataframe(gff_file)
+    feat = feat[feat.gbkey=='Gene']
+    return feat
+
+def sites_matrix(struct, columns=['label'],index=['start','end'], freq=0):
+    """Pivot by start site"""
+    
+    X = pd.pivot_table(struct,index=index,columns=columns,values='Name',aggfunc='first')
+    X[X.notnull()] = 1
+    X = X.fillna(0)
+    #remove unique?    
+    X = X[X.sum(1)>freq]
+    return X
+
+def RD_matrix(struct, columns=['label']):
+    """pivot by presence of RDs"""
+
+    X = pd.pivot_table(struct,index=['RD'],columns=columns,values='Name',aggfunc='count')
+    X[X.notnull()] = 1
+    X = X.fillna(0)  
+    return X
+
+
 def get_assembly_summary(id):
+    
     from Bio import Entrez
     esummary_handle = Entrez.esummary(db="assembly", id=id, report="full")
     esummary_record = Entrez.read(esummary_handle)

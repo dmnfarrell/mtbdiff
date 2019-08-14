@@ -56,6 +56,10 @@ def run_RD_checker(rds):
     X = X.fillna(0)
     return X
 
-def plot_RD(df, path):
-    cl=sns.clustermap(df,cbar=False,figsize=(7,8),lw=.2,linecolor='gray',cmap='gray_r',yticklabels=True)
-    cl.savefig(os.path.join(path,'RD.png'))
+def plot_RD(df, width=12, row_colors=None):
+    
+    h=len(df)/8+5
+    g=sns.clustermap(df,figsize=(width,h),lw=.2,linecolor='gray',cmap='gray_r',
+                      yticklabels=True, row_colors=row_colors)# cbar=False)
+    #g.savefig(path)
+    return g
