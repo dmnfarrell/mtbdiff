@@ -30,6 +30,7 @@ from Bio import AlignIO, SeqIO
 
 module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
 datadir = os.path.join(module_path, 'data')
+mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
 RD_file = os.path.join(datadir,'RD.csv')
 RD = pd.read_csv(RD_file,comment='#')
 
@@ -106,12 +107,14 @@ def read_nucdiff_gff(gff_file):
     df = df[df.start>0]
     return df
 
-def get_nucdiff_results(path, names):
+def get_nucdiff_results(path, names, ref=None):
     """Get results from multiple nucdiff folders."""
 
     struct = []
     snp = []
-    ref = 'MTB-H37Rv'
+    if ref is None:
+        ref = 'MTB-H37Rv'
+
     for n in names:
         df = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_struct.gff')
         df2 = read_nucdiff_gff(f'{path}/{ref}_{n}/results/query_ref_snps.gff')
@@ -119,7 +122,9 @@ def get_nucdiff_results(path, names):
         df2['label'] = n
         struct.append(df)
         snp.append(df2)
+    drop = ['blk_query','blk_query_len','blk_ref','blk_ref_len','breakpoint_query']
     struct = pd.concat(struct, sort=True)
+    struct = struct.drop(columns=drop)
     snp = pd.concat(snp, sort=True)
     return struct, snp
 
@@ -147,7 +152,7 @@ def find_regions(result):
 
 def get_region(x, stcoord='start', endcoord='end'):
     """Get an overlapping RD from coord"""
-    
+
     st = x[stcoord]; end = x[endcoord]
     found = RD[ (st>RD.Start) & (st<RD.Stop) |
                  ((end>RD.Start) & (end<RD.Stop)) |
@@ -163,11 +168,11 @@ def get_mtb_gff():
 
 def sites_matrix(struct, columns=['label'],index=['start','end'], freq=0):
     """Pivot by start site"""
-    
+
     X = pd.pivot_table(struct,index=index,columns=columns,values='Name',aggfunc='first')
     X[X.notnull()] = 1
     X = X.fillna(0)
-    #remove unique?    
+    #remove unique?
     X = X[X.sum(1)>freq]
     return X
 
@@ -176,12 +181,12 @@ def RD_matrix(struct, columns=['label']):
 
     X = pd.pivot_table(struct,index=['RD'],columns=columns,values='Name',aggfunc='count')
     X[X.notnull()] = 1
-    X = X.fillna(0)  
+    X = X.fillna(0)
     return X
 
 
 def get_assembly_summary(id):
-    
+
     from Bio import Entrez
     esummary_handle = Entrez.esummary(db="assembly", id=id, report="full")
     esummary_record = Entrez.read(esummary_handle)

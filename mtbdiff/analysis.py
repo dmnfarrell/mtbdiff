@@ -35,31 +35,50 @@ datadir = os.path.join(module_path, 'data')
 mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
 mtb_gff = os.path.join(datadir, 'MTB-H37Rv.gff')
 
-def run_genomes(path, outpath='results'):
-    """Run multiple genome files in path"""
+def run_genomes(path, outpath='results', ref=None):
+    """Run multiple genome files in path.
+
+    Args:
+        path: folder with input genome files
+        outpath: output folder
+        ref: reference genome fasta file, default is MTB-H37Rv
+    """
 
     filenames = glob.glob(path+'/*.f*a')
+    if ref is None:
+        ref = mtb_ref
+    if not os.path.exists(ref):
+        print ('no such file %s' %ref)
+        return
     names = []
     for f in filenames:
         n = os.path.splitext(os.path.basename(f))[0]
         names.append(n)
         print (f, n)
-        utils.run_nucdiff(mtb_ref,f, outpath)
+        utils.run_nucdiff(ref, f, outpath)
     return names
 
 def run_RD_checker(rds):
     """Check for presence of RD"""
 
     X = pd.pivot_table(rds,index='RD_name',columns=['species'],values='Start')
-    #f,ax=plt.subplots(figsize=(8,8))
     X[X.notnull()] = 1
     X = X.fillna(0)
     return X
 
 def plot_RD(df, width=12, row_colors=None):
-    
+
     h=len(df)/8+5
     g=sns.clustermap(df,figsize=(width,h),lw=.2,linecolor='gray',cmap='gray_r',
                       yticklabels=True, row_colors=row_colors)# cbar=False)
-    #g.savefig(path)
     return g
+
+def sites_matrix(struct, index=['start','end'], freq=0):
+    """Pivot by start site"""
+
+    X = pd.pivot_table(struct,index=index,columns=['label'],values='Name',aggfunc='first')
+    X[X.notnull()] = 1
+    X = X.fillna(0)
+    #remove unique?
+    X = X[X.sum(1)>freq]
+    return X
