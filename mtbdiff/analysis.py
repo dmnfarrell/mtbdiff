@@ -66,19 +66,11 @@ def run_RD_checker(rds):
     X = X.fillna(0)
     return X
 
-def plot_RD(df, width=12, row_colors=None):
+def plot_RD(df, width=12, row_colors=None, **kwargs):
+    """Plot sites matrix as clustermap"""
 
     h=len(df)/8+5
-    g=sns.clustermap(df,figsize=(width,h),lw=.2,linecolor='gray',cmap='gray_r',
-                      yticklabels=True, row_colors=row_colors)# cbar=False)
+    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',
+                      yticklabels=True, row_colors=row_colors, **kwargs)
     return g
 
-def sites_matrix(struct, index=['start','end'], freq=0):
-    """Pivot by start site"""
-
-    X = pd.pivot_table(struct,index=index,columns=['label'],values='Name',aggfunc='first')
-    X[X.notnull()] = 1
-    X = X.fillna(0)
-    #remove unique?
-    X = X[X.sum(1)>freq]
-    return X

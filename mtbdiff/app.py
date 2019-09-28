@@ -30,14 +30,16 @@ def run_tests():
     path = 'test_genomes'
     names = analysis.run_genomes(path, outpath='test_results')
     struct, snp = utils.get_nucdiff_results('test_results', names)
+    struct['RD'] = struct.apply(utils.get_region,1)
+    mtb_feat = utils.get_mtb_features()
+    struct['RD'] = struct.apply(utils.get_region,1)
+    struct['gene'] = struct.apply(lambda x: utils.get_overlapping_annotations(x, mtb_feat), 1)
     struct.to_csv('test_results/ref_struct.csv')
     print()
     print ('structural differences')
     print (struct.groupby('species').agg({'start':np.size}))
-    rds = utils.find_regions(struct)
-    print ('regions of difference')
-    x=analysis.run_RD_checker(rds)
-    analysis.plot_RD(x,'test_results')
+    rdmat = utils.RD_matrix(struct, columns=['Strain','Species'])
+    smat = utils.sites_matrix(struct, columns=['Strain','Species'], freq=10)
     return
 
 def main():

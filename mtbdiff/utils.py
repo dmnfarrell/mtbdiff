@@ -31,6 +31,7 @@ from Bio import AlignIO, SeqIO
 module_path = os.path.dirname(os.path.abspath(__file__)) #path to module
 datadir = os.path.join(module_path, 'data')
 mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
+mtb_gff = os.path.join(datadir, 'MTB-H37Rv.gff')
 RD_file = os.path.join(datadir,'RD.csv')
 RD = pd.read_csv(RD_file,comment='#')
 
@@ -157,23 +158,40 @@ def get_region(x, stcoord='start', endcoord='end'):
     found = RD[ (st>RD.Start) & (st<RD.Stop) |
                  ((end>RD.Start) & (end<RD.Stop)) |
                  ((st<RD.Start) & (end>RD.Stop))]
+
     if len(found)>0:
         return found.iloc[0].RD_name
+    else:
+        return '-'
 
-def get_mtb_gff():
-    gff_file = analysis.mtb_gff
-    feat = utils.gff_to_dataframe(gff_file)
+def get_mtb_features():
+    """Get MTB genome features from gff"""
+
+    gff_file = mtb_gff
+    feat = gff_to_dataframe(gff_file)
     feat = feat[feat.gbkey=='Gene']
     return feat
 
-def sites_matrix(struct, columns=['label'],index=['start','end'], freq=0):
-    """Pivot by start site"""
+def get_overlapping_annotations(x, feat):
+    """Get annotations from sets of coords in a dataframe (start, end)
+    This is a vectorised function to be applied on rows"""
 
-    X = pd.pivot_table(struct,index=index,columns=columns,values='Name',aggfunc='first')
-    X[X.notnull()] = 1
-    X = X.fillna(0)
+    found = feat[((feat.start<x.start) & (feat.end>x.end)) |
+                      ((feat.start>x.start) & (feat.end<x.end)) |
+                      ((feat.end>x.start) & (feat.end<x.end))]
+    if len(found)>0:
+        return ','.join(found.gene)
+
+def sites_matrix(struct, columns=['label'], index=['start','end'], freq=0, values='Name'):
+    """Pivot by start site. Can use 'Name' or 'length' as values."""
+
+    X = pd.pivot_table(struct,index=index,columns=columns,values=values,aggfunc='first')
+    if values == 'Name':
+        X[X.notnull()] = 1
     #remove unique?
-    X = X[X.sum(1)>freq]
+    c=len(X.columns)
+    X=X[X.isnull().sum(1)<(c-10)]
+    X = X.fillna(0)
     return X
 
 def RD_matrix(struct, columns=['label']):
@@ -183,7 +201,6 @@ def RD_matrix(struct, columns=['label']):
     X[X.notnull()] = 1
     X = X.fillna(0)
     return X
-
 
 def get_assembly_summary(id):
 
