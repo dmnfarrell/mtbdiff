@@ -70,7 +70,6 @@ def plot_RD(df, width=12, row_colors=None, **kwargs):
     """Plot sites matrix as clustermap"""
 
     h=len(df)/8+5
-    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',
+    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',xticklabels=True,
                       yticklabels=True, row_colors=row_colors, **kwargs)
     return g
-
