@@ -19,7 +19,7 @@
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 """
 
-import os, sys, io, random, subprocess
+import os, sys, io, random, subprocess, re
 import string
 import numpy as np
 import pandas as pd
@@ -34,6 +34,11 @@ mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
 mtb_gff = os.path.join(datadir, 'MTB-H37Rv.gff')
 RD_file = os.path.join(datadir,'RD.csv')
 RD = pd.read_csv(RD_file,comment='#')
+rex = re.compile('P+E')
+
+def get_mtb_assembly_data():
+    df = pd.read_csv(os.path.join(datadir,'mtb_assemblies.csv'))
+    return df
 
 def features_to_dataframe(features, cds=False):
     """Get features from a biopython seq record object into a dataframe
@@ -81,18 +86,15 @@ def gff_to_dataframe(filename):
     feats = gff_to_features(filename)
     return features_to_dataframe(feats)
 
-def run_nucdiff(ref, query, outpath='results'):
+def run_nucdiff(ref, query, outpath='results', overwrite=False):
     """Run nucfdiff"""
 
     r = os.path.splitext(os.path.basename(ref))[0]
     q = os.path.splitext(os.path.basename(query))[0]
     out = outpath + f'/{r}_{q}'
-    if not os.path.exists(out):
-        cmd = f'nucdiff {ref} {query} {out} query'
-        print (cmd)
-        subprocess.check_output(cmd,shell=True)
-    else:
-        print ('folder already present')
+    if not os.path.exists(out) or overwrite == True:
+        cmd = f'nucdiff {ref} {query} {out} query'        
+        subprocess.check_output(cmd,shell=True)    
     return
 
 def read_nucdiff_gff(gff_file):
@@ -202,6 +204,16 @@ def RD_matrix(struct, columns=['label']):
     X = X.fillna(0)
     return X
 
+def get_region_type(x):
+    """Get type of region - apply on column"""
+    
+    if x.RD != '-':
+        return 'known RD'
+    elif len(rex.findall(str(x.gene)))>0:
+        return 'PE/PPE'
+    else:
+        return 'other'
+    
 def get_assembly_summary(id):
 
     from Bio import Entrez
@@ -209,18 +221,20 @@ def get_assembly_summary(id):
     esummary_record = Entrez.read(esummary_handle)
     return esummary_record
 
-def get_assemblies(term, download=True, path='assemblies'):
+def get_assemblies(term=None, ids=None, download=True, path='assemblies'):
     """Download genbank assemblies for a given search term.
     Args:
-        term: usually organaism name"""
+        ids: entrez ids for assemblies
+        term: usually organism name"""
 
     from Bio import Entrez
     Entrez.email = "A.N.Other@example.com"
-    handle = Entrez.esearch(db="assembly", term=term, retmax='200')
-    record = Entrez.read(handle)
-    ids = record['IdList']
-    print (f'found {len(ids)} ids')
-    links = []
+    if ids == None:
+        handle = Entrez.esearch(db="assembly", term=term, retmax='200')
+        record = Entrez.read(handle)
+        ids = record['IdList']
+        print (f'found {len(ids)} ids')
+    links = []   
     for id in ids:
         #get summary
         summary = get_assembly_summary(id)
@@ -236,3 +250,10 @@ def get_assemblies(term, download=True, path='assemblies'):
             #download link
             urllib.request.urlretrieve(link, f'{label}.fna.gz')
     return links
+
+def get_url_from_path(url):
+    """get full path for genomic fasta from url"""
+    
+    label = os.path.basename(url)
+    link = os.path.join(url,label+'_genomic.fna.gz')
+    return link

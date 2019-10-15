@@ -40,11 +40,16 @@ def run_genomes(path, outpath='results', ref=None):
 
     Args:
         path: folder with input genome files
-        outpath: output folder
+        outpath: output folder        
         ref: reference genome fasta file, default is MTB-H37Rv
+    Returns:
+        list of labels of the genomes run
     """
 
     filenames = glob.glob(path+'/*.f*a')
+    if len(filenames) == 0:
+        print ('no fasta files found in %s' %path)
+        return
     if ref is None:
         ref = mtb_ref
     if not os.path.exists(ref):
@@ -58,6 +63,14 @@ def run_genomes(path, outpath='results', ref=None):
         utils.run_nucdiff(ref, f, outpath)
     return names
 
+def get_summary(struct):
+    """Get summary of common variants for all samples"""
+    
+    S = struct.groupby(['start','end','gene','RD','region_type','Name'],as_index=False).agg({'ID':np.size,'length':np.mean})
+    S = S.rename(columns={'ID':'freq'})
+    S = S.sort_values('freq',ascending=False)
+    return S
+
 def run_RD_checker(rds):
     """Check for presence of RD"""
 
@@ -69,7 +82,7 @@ def run_RD_checker(rds):
 def plot_RD(df, width=12, row_colors=None, **kwargs):
     """Plot sites matrix as clustermap"""
 
-    h=len(df)/8+5
+    h=len(df)/8+6
     g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',xticklabels=True,
                       yticklabels=True, row_colors=row_colors, **kwargs)
     return g
