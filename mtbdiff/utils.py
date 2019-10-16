@@ -37,6 +37,8 @@ RD = pd.read_csv(RD_file,comment='#')
 rex = re.compile('P+E')
 
 def get_mtb_assembly_data():
+    """Get dataframe of all MTB assembly data"""
+    
     df = pd.read_csv(os.path.join(datadir,'mtb_assemblies.csv'))
     return df
 
@@ -215,17 +217,19 @@ def get_region_type(x):
         return 'other'
     
 def get_assembly_summary(id):
-
+    """Entrez assembly esummary for entez id"""
+    
     from Bio import Entrez
     esummary_handle = Entrez.esummary(db="assembly", id=id, report="full")
     esummary_record = Entrez.read(esummary_handle)
     return esummary_record
 
-def get_assemblies(term=None, ids=None, download=True, path='assemblies'):
-    """Download genbank assemblies for a given search term.
+def fetch_assemblies(term=None, ids=None, download=True, path='assemblies'):
+    """Download any genbank assemblies for a given search term or entrez ids.
     Args:
         ids: entrez ids for assemblies
-        term: usually organism name"""
+        term: entrez search term, can be organism name
+    """
 
     from Bio import Entrez
     Entrez.email = "A.N.Other@example.com"
@@ -257,3 +261,45 @@ def get_url_from_path(url):
     label = os.path.basename(url)
     link = os.path.join(url,label+'_genomic.fna.gz')
     return link
+
+def fetch_test_data(path = 'test_genomes'):
+    """Download test genome assemblies"""
+    
+    ids = ['GCA_003431725','GCA_003431765','GCA_003431735','GCA_003431775']
+    
+    if not os.path.exists(path):
+        os.mkdir(path)
+    fetch_mtb_assemblies(gca_ids=ids, path=path)
+    return
+
+def fetch_mtb_assemblies(gca_ids=None, data=None, path='assemblies'):
+    """
+    Fetch MTB assemblies from a list of GCA ids or subset of the main assemblies table
+    """
+    
+    import urllib
+    asm = utils.get_mtb_assembly_data()
+    if data is None:
+        data = asm[asm.Assembly_nover.isin(gca_ids)]
+        
+    for i,row in data.iterrows():
+        url = row['GenBank FTP']
+        acc = row.Assembly
+        link = utils.get_url_from_path(url)
+        filename = os.path.join(path, acc+'.fa.gz')
+        print (link, filename)
+        if not os.path.exists(filename):
+            urllib.request.urlretrieve(link, filename)
+    return
+
+def get_bioproject_info(id):
+    """Get bioproject meta data from a bioproject ID.
+    Returns a dictionary.
+    """
+    
+    from Bio import Entrez
+    Entrez.email = "A.N.Other@example.com"
+    handle = Entrez.esummary(db="bioproject", id=id, retmax='20')
+    rec = Entrez.read(handle)
+    d = dict(rec['DocumentSummarySet']['DocumentSummary'][0])
+    return d

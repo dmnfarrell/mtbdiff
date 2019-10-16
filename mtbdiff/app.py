@@ -62,15 +62,10 @@ def run(path, outpath, ref=None):
     print ('results saved to %s' %outpath)
     return
 
-def fetch_test_data():
-    """Download test genome assemblies"""
-    
-    ids=['GCA_003431725','GCA_003431765','GCA_003431735','GCA_003431775']
-    utils.get_assemblies(ids=ids, path='test_genomes')
-    return
-
 def run_test():
     """Run test folder"""
+    
+    utils.fetch_test_data('test_genomes')
     run('test_genomes', outpath='test_results')
     return
 
