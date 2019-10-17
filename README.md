@@ -1,6 +1,6 @@
 # MTBDiff
 
-<img align="right" src=https://github.com/dmnfarrell/mtbdiff/blob/master/img/logo.png width=280px>
+<img align="right" src=https://github.com/dmnfarrell/mtbdiff/blob/master/img/logo.png width=250px>
 
 Mycobacterium tuberculosis is the causative agent of human TB. Not only are there are multiple closely related lineages of the bacteria present in human populations, there are also animal adapted organisms such as M. bovis that infect a broad range of animal species beyond their most prominent host in cattle. The entire group is referred to as the M. tuberculosis complex (MTC). The animal adapted species are characterized by high sequence similarity to MTB but with key sequence polymorphisms called regions of difference in which deletions or insertions are present. Some of these may be important for adaption to the chosen niche of the species.
 

@@ -133,8 +133,17 @@ def get_nucdiff_results(path, names, ref=None):
     snp = pd.concat(snp, sort=True)
     return struct, snp
 
+def annotate_results(df):
+    """Get region/annotation info for results"""
+    
+    mtb_feat = get_mtb_features()
+    df['RD'] = df.apply(get_region,1)
+    df['gene'] = df.apply(lambda x: get_overlapping_annotations(x, mtb_feat), 1)
+    df['region_type'] = df.apply(get_region_type,1)
+    return df
+
 def find_regions(result):
-    """find known regions overlap in results from nucdiff"""
+    """Find known regions overlap in results from nucdiff"""
 
     #result = result[result.Name.isin(['insertion','deletion'])]
     RD = pd.read_csv(RD_file,comment='#')

@@ -79,7 +79,7 @@ def run_RD_checker(rds):
     X = X.fillna(0)
     return X
 
-def plot_RD(df, width=12, row_colors=None, **kwargs):
+def plot_RD(df, width=14, row_colors=None, **kwargs):
     """Plot sites matrix as clustermap"""
 
     h=len(df)/8+6
