@@ -63,14 +63,6 @@ def run_genomes(path, outpath='results', ref=None):
         utils.run_nucdiff(ref, f, outpath)
     return names
 
-def get_summary(struct):
-    """Get summary of common variants for all samples"""
-    
-    S = struct.groupby(['start','end','gene','RD','region_type','Name'],as_index=False).agg({'ID':np.size,'length':np.mean})
-    S = S.rename(columns={'ID':'freq'})
-    S = S.sort_values('freq',ascending=False)
-    return S
-
 def run_RD_checker(rds):
     """Check for presence of RD"""
 
@@ -79,10 +71,10 @@ def run_RD_checker(rds):
     X = X.fillna(0)
     return X
 
-def plot_RD(df, width=14, row_colors=None, **kwargs):
+def plot_RD(df, width=16, row_colors=None, **kwargs):
     """Plot sites matrix as clustermap"""
 
     h=len(df)/8+6
-    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',xticklabels=True,
+    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',lw=0.5, xticklabels=True,
                       yticklabels=True, row_colors=row_colors, **kwargs)
     return g

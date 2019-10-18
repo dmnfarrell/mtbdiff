@@ -131,10 +131,15 @@ def get_nucdiff_results(path, names, ref=None):
     struct = pd.concat(struct, sort=True)
     struct = struct.drop(columns=drop)
     snp = pd.concat(snp, sort=True)
+    #remove reshuffling events?
+    struct = struct[~struct.Name.str.contains('reshuffling')]    
     return struct, snp
 
 def annotate_results(df):
-    """Get region/annotation info for results"""
+    """
+    Get region/annotation info from start/end coords of a dataframe.
+    This will be slow if applied on a large table.
+    """
     
     mtb_feat = get_mtb_features()
     df['RD'] = df.apply(get_region,1)
@@ -142,6 +147,24 @@ def annotate_results(df):
     df['region_type'] = df.apply(get_region_type,1)
     return df
 
+def get_mtb_features():
+    """Get MTB genome features from gff"""
+
+    gff_file = mtb_gff
+    feat = gff_to_dataframe(gff_file)
+    feat = feat[feat.gbkey=='Gene']
+    return feat
+
+def get_overlapping_annotations(x, feat):
+    """Get annotations from sets of coords in a dataframe (start, end)
+    This is a vectorised function to be applied on rows"""
+
+    found = feat[((feat.start<x.start) & (feat.end>x.end)) |
+                      ((feat.start>x.start) & (feat.end<x.end)) |
+                      ((feat.end>x.start) & (feat.end<x.end))]
+    if len(found)>0:
+        return ','.join(found.gene)
+    
 def find_regions(result):
     """Find known regions overlap in results from nucdiff"""
 
@@ -177,23 +200,26 @@ def get_region(x, stcoord='start', endcoord='end'):
     else:
         return '-'
 
-def get_mtb_features():
-    """Get MTB genome features from gff"""
+def get_region_type(x):
+    """Get type of region - apply on column"""
+    
+    if x.RD != '-':
+        return 'known RD'
+    elif len(rex.findall(str(x.gene)))>0:
+        return 'PE/PPE'
+    else:
+        return 'other'
 
-    gff_file = mtb_gff
-    feat = gff_to_dataframe(gff_file)
-    feat = feat[feat.gbkey=='Gene']
-    return feat
+def get_summary(df, freq=1):
+    """Get summary of common variants for all samples and annotate them."""
 
-def get_overlapping_annotations(x, feat):
-    """Get annotations from sets of coords in a dataframe (start, end)
-    This is a vectorised function to be applied on rows"""
-
-    found = feat[((feat.start<x.start) & (feat.end>x.end)) |
-                      ((feat.start>x.start) & (feat.end<x.end)) |
-                      ((feat.end>x.start) & (feat.end<x.end))]
-    if len(found)>0:
-        return ','.join(found.gene)
+    S = df.groupby(['start','end','Name'],as_index=False).agg({'ID':np.size,'length':np.mean})    
+    S = S.rename(columns={'ID':'freq'})
+    S = S[S.freq>freq]
+    print (len(S))
+    S = annotate_results(S)
+    S = S.sort_values('freq',ascending=False)
+    return S
 
 def sites_matrix(struct, columns=['label'], index=['start','end'], freq=0, values='Name'):
     """Pivot by start site. Can use 'Name' or 'length' as values."""
@@ -209,21 +235,13 @@ def sites_matrix(struct, columns=['label'], index=['start','end'], freq=0, value
 
 def RD_matrix(struct, columns=['label']):
     """pivot by presence of RDs"""
-
+    
     X = pd.pivot_table(struct,index=['RD'],columns=columns,values='Name',aggfunc='count')
     X[X.notnull()] = 1
     X = X.fillna(0)
+    X = X.drop('-')
+    X = X.astype(int)
     return X
-
-def get_region_type(x):
-    """Get type of region - apply on column"""
-    
-    if x.RD != '-':
-        return 'known RD'
-    elif len(rex.findall(str(x.gene)))>0:
-        return 'PE/PPE'
-    else:
-        return 'other'
     
 def get_assembly_summary(id):
     """Entrez assembly esummary for entez id"""
