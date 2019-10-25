@@ -39,7 +39,7 @@ def run(path, outpath, ref=None):
     print('-------------------')
     #print (struct.region_type.value_counts())
         
-    S = analysis.get_summary(struct)
+    S = utils.get_summary(struct)
     print('most frequent variants:')
     print (S[:20])
 

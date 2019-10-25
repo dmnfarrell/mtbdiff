@@ -131,8 +131,10 @@ def get_nucdiff_results(path, names, ref=None):
     struct = pd.concat(struct, sort=True)
     struct = struct.drop(columns=drop)
     snp = pd.concat(snp, sort=True)
-    #remove reshuffling events?
-    struct = struct[~struct.Name.str.contains('reshuffling')]    
+    #remove reshuffling and other events?
+    omit = ['unaligned_beginning']
+    struct = struct[~struct.Name.isin(omit)]    
+    struct = struct[~struct.Name.str.contains('reshuffling')]
     return struct, snp
 
 def annotate_results(df):
@@ -190,6 +192,8 @@ def find_regions(result):
 def get_region(x, stcoord='start', endcoord='end'):
     """Get an overlapping RD from coord"""
 
+    if x.Name != 'deletion':
+        return '-'
     st = x[stcoord]; end = x[endcoord]
     found = RD[ (st>RD.Start) & (st<RD.Stop) |
                  ((end>RD.Start) & (end<RD.Stop)) |
@@ -229,7 +233,7 @@ def sites_matrix(struct, columns=['label'], index=['start','end'], freq=0, value
         X[X.notnull()] = 1
     #remove unique?
     c=len(X.columns)
-    X=X[X.isnull().sum(1)<(c-10)]
+    X=X[X.isnull().sum(1)<(c-freq)]
     X = X.fillna(0)
     return X
 
@@ -292,8 +296,9 @@ def get_url_from_path(url):
 def fetch_test_data(path = 'test_genomes'):
     """Download test genome assemblies"""
     
-    ids = ['GCA_003431725','GCA_003431765','GCA_003431735','GCA_003431775']
-    
+    #ids = ['GCA_003431725','GCA_003431765','GCA_003431735','GCA_003431775']   
+    refs = pd.read_csv(os.path.join(datadir,'ref_genomes.csv'))
+    ids = list(refs.Assembly_nover)    
     if not os.path.exists(path):
         os.mkdir(path)
     fetch_mtb_assemblies(gca_ids=ids, path=path)
@@ -305,14 +310,14 @@ def fetch_mtb_assemblies(gca_ids=None, data=None, path='assemblies'):
     """
     
     import urllib
-    asm = utils.get_mtb_assembly_data()
+    asm = get_mtb_assembly_data()
     if data is None:
         data = asm[asm.Assembly_nover.isin(gca_ids)]
         
     for i,row in data.iterrows():
         url = row['GenBank FTP']
         acc = row.Assembly
-        link = utils.get_url_from_path(url)
+        link = get_url_from_path(url)
         filename = os.path.join(path, acc+'.fa.gz')
         print (link, filename)
         if not os.path.exists(filename):
