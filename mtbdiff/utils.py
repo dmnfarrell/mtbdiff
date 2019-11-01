@@ -96,7 +96,7 @@ def run_nucdiff(ref, query, outpath='results', overwrite=False):
     out = outpath + f'/{r}_{q}'
     if not os.path.exists(out) or overwrite == True:
         cmd = f'nucdiff {ref} {query} {out} query'        
-        subprocess.check_output(cmd,shell=True)    
+        tmp = subprocess.check_output(cmd,shell=True)        
     return
 
 def read_nucdiff_gff(gff_file):
@@ -217,10 +217,13 @@ def get_region_type(x):
 def get_summary(df, freq=1):
     """Get summary of common variants for all samples and annotate them."""
 
-    S = df.groupby(['start','end','Name'],as_index=False).agg({'ID':np.size,'length':np.mean})    
+    if 'ref_bases' in df.columns:
+        cols = ['start','end','Name','descr','ref_bases','query_bases']
+    else:
+        cols = ['start','end','Name']
+    S = df.groupby(cols,as_index=False).agg({'ID':np.size,'length':np.mean})    
     S = S.rename(columns={'ID':'freq'})
     S = S[S.freq>freq]
-    print (len(S))
     S = annotate_results(S)
     S = S.sort_values('freq',ascending=False)
     return S
@@ -245,6 +248,7 @@ def RD_matrix(struct, columns=['label']):
     X = X.fillna(0)
     X = X.drop('-')
     X = X.astype(int)
+    X = X.sort_index()
     return X
     
 def get_assembly_summary(id):
