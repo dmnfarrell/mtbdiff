@@ -129,13 +129,20 @@ def get_nucdiff_results(path, names, ref=None):
         snp.append(df2)
     drop = ['blk_query','blk_query_len','blk_ref','blk_ref_len','breakpoint_query']
     struct = pd.concat(struct, sort=True)
-    struct = struct.drop(columns=drop)
+    struct = struct.drop(columns=drop)    
     snp = pd.concat(snp, sort=True)
     #remove reshuffling and other events?
-    omit = ['unaligned_beginning']
+    omit = ['unaligned_beginning','unaligned_end','circular_genome_start']
     struct = struct[~struct.Name.isin(omit)]    
     struct = struct[~struct.Name.str.contains('reshuffling')]
+    struct['insertion_length'] = struct.query_coord.apply(get_ins_length)
     return struct, snp
+
+def get_ins_length(x):
+    s = x.split('-')
+    if len(s)>1:
+        return int(s[1])-int(s[0])
+    return 0
 
 def annotate_results(df):
     """
@@ -220,7 +227,7 @@ def get_summary(df, freq=1):
     if 'ref_bases' in df.columns:
         cols = ['start','end','Name','descr','ref_bases','query_bases']
     else:
-        cols = ['start','end','Name']
+        cols = ['start','end','Name','insertion_length']
     S = df.groupby(cols,as_index=False).agg({'ID':np.size,'length':np.mean})    
     S = S.rename(columns={'ID':'freq'})
     S = S[S.freq>freq]

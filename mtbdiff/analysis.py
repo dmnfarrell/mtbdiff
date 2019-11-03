@@ -71,13 +71,13 @@ def run_RD_checker(rds):
     X = X.fillna(0)
     return X
 
-def plot_RD(df, width=16, row_colors=None, **kwargs):
+def plot_RD(df, width=16, row_colors=None, lw=.5, **kwargs):
     """Plot sites matrix as clustermap"""
 
     h=len(df)/8+6
     xticklabels=1
     if len(df.columns)>30:
         xticklabels=0
-    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',lw=0.5, xticklabels=xticklabels,
-                      yticklabels=True, row_colors=row_colors, col_cluster=False, **kwargs)
+    g=sns.clustermap(df,figsize=(width,h),linecolor='gray',cmap='gray_r',lw=lw, xticklabels=xticklabels,
+                      yticklabels=True, row_colors=row_colors, **kwargs)
     return g
