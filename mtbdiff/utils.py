@@ -88,14 +88,16 @@ def gff_to_dataframe(filename):
     feats = gff_to_features(filename)
     return features_to_dataframe(feats)
 
-def run_nucdiff(ref, query, outpath='results', overwrite=False):
+def run_nucdiff(ref, query, outpath='results', options='', overwrite=False, show_cmd=False):
     """Run nucfdiff"""
 
     r = os.path.splitext(os.path.basename(ref))[0]
     q = os.path.splitext(os.path.basename(query))[0]
     out = outpath + f'/{r}_{q}'
     if not os.path.exists(out) or overwrite == True:
-        cmd = f'nucdiff {ref} {query} {out} query'        
+        cmd = f'nucdiff {options} {ref} {query} {out} query'   
+        if show_cmd == True:
+            print (cmd)
         tmp = subprocess.check_output(cmd,shell=True)        
     return
 

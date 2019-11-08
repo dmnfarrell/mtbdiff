@@ -35,7 +35,7 @@ datadir = os.path.join(module_path, 'data')
 mtb_ref = os.path.join(datadir, 'MTB-H37Rv.fna')
 mtb_gff = os.path.join(datadir, 'MTB-H37Rv.gff')
 
-def run_genomes(path, outpath='results', ref=None):
+def run_genomes(path, outpath='results', ref=None, **kwargs):
     """Run multiple genome files in path.
 
     Args:
@@ -60,7 +60,7 @@ def run_genomes(path, outpath='results', ref=None):
         n = os.path.splitext(os.path.basename(f))[0]
         names.append(n)
         print (f, n)
-        utils.run_nucdiff(ref, f, outpath)
+        utils.run_nucdiff(ref, f, outpath, **kwargs)
     return names
 
 def run_RD_checker(rds):
