@@ -4,9 +4,9 @@
 
 Mycobacterium tuberculosis is the causative agent of human TB. Not only are there are multiple closely related lineages of the bacteria present in human populations, there are also animal adapted organisms such as M. bovis that infect a broad range of animal species beyond their most prominent host in cattle. The entire group is referred to as the M. tuberculosis complex (MTC). The animal adapted species are characterized by high sequence similarity to MTB but with key sequence polymorphisms called regions of difference in which deletions or insertions are present. Some of these may be important for adaption to the chosen niche of the species.
 
-With the increased use of whole genome sequencing it is important to be able to compare new and existing isolates systematically and rapidly. MTBDiff performs quick analysis of structural and SNP changes compare to the laboratory reference species MTB H37Rv. It outputs a table indicating of previously known regions (RDs) are present in the species. Multiple genomes can be compared at once. It also indicates if any novel structural changes are present.
+With the increased use of whole genome sequencing it is important to be able to compare new and existing isolates systematically and rapidly. MTBDiff is for exploratory analysis of structural and SNP changes compared to the laboratory reference species MTB H37Rv. Multiple genomes can be compared at once and the frequency of changes across the input samples is recorded.  It also outputs a table indicating if previously known regions (RDs) are present in the species. 
 
-This tool uses MUMmer for aligning genomic sequences and NucDiff which parses the results. NucDiff locates and categorizes differences between two closely related nucleotide sequences. It is able to deal with very fragmented genomes, structural rearrangements and various local differences. It is also suitable for assemblies.
+This tool uses MUMmer for aligning genomic sequences and NucDiff which parses the results. NucDiff locates and categorizes differences between two closely related nucleotide sequences. It is suitable for assemblies though you may get better results using some form of *de novo* reference guided assembly if using your own reads.
 
 ## Installation
 
